@@ -1,8 +1,10 @@
-#Compile
+# Installation
+First install `nightly-2023-05-27` for Rust. 
+Second download the source code.
+Third read the Compile section.
 
+# Compile
 For compiling use `cargo +nightly-2023-05-27 build`
 
-
-#License
-
+# License
 This project in under the GNU General Public License v3.0. For more info see LICENSE.
