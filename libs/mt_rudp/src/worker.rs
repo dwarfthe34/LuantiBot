@@ -29,7 +29,7 @@ struct Split {
 
 #[derive(Debug)]
 struct RecvChan {
-    packets: Vec<Option<Vec<u8>>>, // char ** 😛
+    packets: Vec<Option<Vec<u8>>>,
     splits: HashMap<u16, Split>,
     seqnum: u16,
 }
@@ -101,7 +101,6 @@ impl<S: UdpSender, R: UdpReceiver> Worker<S, R> {
                 },
                 _ = self.cleanup.tick() => {
                     let timeout = Duration::from_secs(TIMEOUT);
-
                     for chan in self.chans.iter_mut() {
                         chan.splits.retain(|_, v| !matches!(v.timestamp, Some(t) if t.elapsed() < timeout));
                     }
@@ -180,11 +179,9 @@ impl<S: UdpSender, R: UdpReceiver> Worker<S, R> {
                 }
                 CtlType::SetPeerID => {
                     let mut id = self.sender.remote_id.write().await;
-
                     if *id != PeerID::Nil as u16 {
                         return Err(PeerIDAlreadySet);
                     }
-
                     *id = cursor.read_u16::<BigEndian>()?;
                 }
                 CtlType::Ping => {}
@@ -194,11 +191,12 @@ impl<S: UdpSender, R: UdpReceiver> Worker<S, R> {
                 }
             },
             PktType::Orig => {
+                let remaining_bytes = cursor.get_ref()[cursor.position() as usize..].to_vec();
                 self.output
                     .send(Ok(Pkt {
                         chan,
                         unrel,
-                        data: Cow::Owned(cursor.remaining_slice().into()),
+                        data: Cow::Owned(remaining_bytes),
                     }))
                     .ok();
             }
@@ -224,7 +222,7 @@ impl<S: UdpSender, R: UdpReceiver> Worker<S, R> {
                     .chunks
                     .get_mut(chunk_index)
                     .ok_or(InvalidChunkIndex(chunk_index, chunk_count))?
-                    .replace(cursor.remaining_slice().into())
+                    .replace(cursor.get_ref()[cursor.position() as usize..].to_vec())
                     .is_none()
                 {
                     split.got += 1;
@@ -234,7 +232,6 @@ impl<S: UdpSender, R: UdpReceiver> Worker<S, R> {
 
                 if split.got == chunk_count {
                     let split = self.chans[ch].splits.remove(&seqnum).unwrap();
-
                     self.output
                         .send(Ok(Pkt {
                             chan,
@@ -243,10 +240,7 @@ impl<S: UdpSender, R: UdpReceiver> Worker<S, R> {
                                 .chunks
                                 .into_iter()
                                 .map(|x| x.unwrap())
-                                .reduce(|mut a, mut b| {
-                                    a.append(&mut b);
-                                    a
-                                })
+                                .reduce(|mut a, mut b| { a.append(&mut b); a })
                                 .unwrap_or_default()
                                 .into(),
                         }))
@@ -255,7 +249,8 @@ impl<S: UdpSender, R: UdpReceiver> Worker<S, R> {
             }
             PktType::Rel => {
                 let seqnum = cursor.read_u16::<BigEndian>()?;
-                self.chans[ch].packets[to_seqnum(seqnum)].replace(cursor.remaining_slice().into());
+                self.chans[ch].packets[to_seqnum(seqnum)]
+                    .replace(cursor.get_ref()[cursor.position() as usize..].to_vec());
 
                 let mut ack_data = Vec::with_capacity(3);
                 ack_data.write_u8(CtlType::Ack as u8)?;
@@ -278,7 +273,6 @@ impl<S: UdpSender, R: UdpReceiver> Worker<S, R> {
                     if let Err(e) = self.process_pkt(io::Cursor::new(pkt), false, chan).await {
                         self.output.send(Err(e)).ok();
                     }
-
                     self.chans[ch].seqnum = self.chans[ch].seqnum.overflowing_add(1).0;
                 }
             }
