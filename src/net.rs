@@ -114,6 +114,17 @@ async fn handle_pkt(
 
         ToCltPkt::Hp { hp, .. } => {
             let _ = event_tx.send(Event::Hp { hp }).await;
+            if hp == 0 {
+                info!("HP=0 — sending Respawn");
+                let _ = tx.send(&ToSrvPkt::Respawn).await.map(|_| ());
+                let _ = event_tx.send(Event::Died).await;
+            }
+        }
+
+        ToCltPkt::DeathScreen { .. } => {
+            info!("DeathScreen — sending Respawn");
+            let _ = tx.send(&ToSrvPkt::Respawn).await.map(|_| ());
+            let _ = event_tx.send(Event::Died).await;
         }
 
         ToCltPkt::UpdatePlayerList { update_type, players } => {
@@ -136,6 +147,12 @@ async fn handle_pkt(
                 jump_speed,
                 gravity,
             }).await;
+        }
+
+        ToCltPkt::AnnounceMedia { .. } => {
+            // Tell the server we don't need any media — without this it won't send game packets
+            debug!("AnnounceMedia — sending empty RequestMedia");
+            let _ = tx.send(&ToSrvPkt::RequestMedia { filenames: vec![] }).await.map(|_| ());
         }
 
         ToCltPkt::BlockData { pos, .. } => {

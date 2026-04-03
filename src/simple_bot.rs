@@ -1,35 +1,48 @@
-use luanti_bot::{Bot, BotConfig, Event};
+use luanti_bot::{Bot, Config, Event};
 use tracing::info;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    tracing_subscriber::fmt::init(); // RUST_LOG=info or debug
+    tracing_subscriber::fmt::init();
 
-    let mut bot = Bot::connect(BotConfig::new("135.148.164.122:16706", "dwarfbot", "p")).await?;
-    info!("Connected and authenticated");
+    let mut bot = Bot::connect(Config::new("84.247.132.141:40001", "dwarfbot", "p")).await?;
+    info!("Connected");
 
     while let Some(event) = bot.next_event().await {
         match event {
             Event::Joined => {
-                info!("Joined the server");
-                bot.send_chat("test test test test test").await?;
+                info!("Joined");
+            }
+
+            Event::MovementParams { .. } => {
+                if !bot.state.respawned {
+                    bot.state.respawned = true;
+                    info!("First MovementParams — respawning");
+                    bot.respawn().await?;
+                }
+            }
+
+            // DeathScreen is handled in net.rs — Respawn is sent automatically.
+            // This event just lets us know it happened.
+            Event::Died => {
+                info!("Died — respawn sent automatically");
             }
 
             Event::Chat { sender, text } => {
                 info!("<{sender}> {text}");
+                if sender == bot.username() { continue; }
 
                 match text.trim() {
-                    "<> <dwarfthe3> !pos" => {
+                    "!pos" => {
                         let p = bot.state.pos;
-                        bot.send_chat(format!("I am at ({:.1}, {:.1}, {:.1})", p.x, p.y, p.z))
-                            .await?;
+                        bot.send_chat(format!("({:.1}, {:.1}, {:.1})", p.x, p.y, p.z)).await?;
                     }
-                    "<> <dwarfthe3> !hp" => {
+                    "!hp" => {
                         bot.send_chat(format!("HP: {}", bot.state.hp)).await?;
                     }
-                    "<> <dwarfthe3> !quit" => {
-                        //bot.send_chat("Goodbye!").await?;
-                        bot.disconnect();
+                    "!quit" => {
+                        bot.send_chat("Goodbye!").await?;
+                        bot.disconnect().await?;
                         break;
                     }
                     _ => {}
@@ -37,15 +50,11 @@ async fn main() -> anyhow::Result<()> {
             }
 
             Event::MovePlayer { pos, .. } => {
-                info!("Server moved bot to ({:.1}, {:.1}, {:.1})", pos.x, pos.y, pos.z);
+                info!("Moved to ({:.1}, {:.1}, {:.1})", pos.x, pos.y, pos.z);
             }
 
             Event::Hp { hp } => {
-                info!("HP updated: {hp}");
-                if hp == 0 or hp == 0 < hp {
-                    // Auto-respawn on death
-                    bot.respawn().await?;
-                }
+                info!("HP: {hp}");
             }
 
             Event::Kicked(reason) => {

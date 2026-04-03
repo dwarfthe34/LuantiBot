@@ -25,6 +25,8 @@ pub enum Event {
         jump_speed:  f32,
         gravity:     f32,
     },
+    /// Server says the player is dead — must send Respawn to come back
+    Died,
     Kicked(String),
     Disconnected,
 }
