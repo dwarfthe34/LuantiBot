@@ -1,11 +1,3 @@
-//! Network layer: wraps mt_rudp + mt_net + mt_auth into a typed event stream.
-//!
-//! - `mt_net::connect()` → `(CltSender, CltReceiver, CltWorker)`
-//! - Worker is spawned as its own task (UDP pump)
-//! - `mt_auth::Auth` drives the SRP handshake via poll() + handle_pkt()
-//! - `ReceiverExt::recv()` deserializes raw RUDP directly into `ToCltPkt`
-//! - After AcceptAuth, auth sends Init2; we send CltReady and emit Joined
-
 use mt_auth::Auth;
 use mt_net::{
     connect, CltReceiver, CltSender, KickReason, ReceiverExt, SenderExt, ToCltPkt, ToSrvPkt,
@@ -116,8 +108,6 @@ async fn handle_pkt(
             let _ = event_tx.send(Event::Chat { sender, text }).await;
         }
 
-        // pos/pitch/yaw here are mt_net's cgmath 0.17 types, which match
-        // our Event definition since event.rs also uses mt_net's re-exports
         ToCltPkt::MovePlayer { pos, pitch, yaw } => {
             let _ = event_tx.send(Event::MovePlayer { pos, pitch, yaw }).await;
         }
@@ -134,7 +124,20 @@ async fn handle_pkt(
             let _ = event_tx.send(Event::TimeOfDay { time, speed }).await;
         }
 
-        // Must ACK or server stops sending map data
+        // Forward server movement params so the bot can calibrate physics
+        ToCltPkt::Movement {
+            walk_speed,
+            jump_speed,
+            gravity,
+            ..
+        } => {
+            let _ = event_tx.send(Event::MovementParams {
+                walk_speed,
+                jump_speed,
+                gravity,
+            }).await;
+        }
+
         ToCltPkt::BlockData { pos, .. } => {
             let _ = tx.send(&ToSrvPkt::GotBlocks { blocks: vec![pos] }).await.map(|_| ());
         }

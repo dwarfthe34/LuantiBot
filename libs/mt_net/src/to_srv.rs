@@ -121,7 +121,7 @@ pub enum ToSrvPkt {
     SelectItem {
         select_item: u16,
     } = 55,
-    Respawn = 56,
+    Respawn = 38,
     Interact {
         action: Interaction,
         item_slot: u16,

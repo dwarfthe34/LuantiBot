@@ -15,7 +15,7 @@ async fn main() -> anyhow::Result<()> {
         .init();
 
     let cfg = Config {
-        address:  std::env::args().nth(1).unwrap_or_else(|| "84.247.132.141:40001".into()),
+        address:  std::env::args().nth(1).unwrap_or_else(|| "135.148.164.122:16706".into()),
         username: std::env::args().nth(2).unwrap_or_else(|| "dwarfbot".into()),
         password: std::env::args().nth(3).unwrap_or_else(|| "p".into()),
         lang:     "en".into(),
@@ -25,15 +25,17 @@ async fn main() -> anyhow::Result<()> {
     let mut bot = Bot::connect(cfg).await?;
     info!("Connected — waiting for events");
 
-    let mut pos_tick = interval(Duration::from_millis(100));
+    // 20 Hz physics tick — 50ms matches Luanti's server step rate
+    let mut phys_tick = interval(Duration::from_millis(50));
+    const DT: f32 = 0.05;
 
     loop {
         tokio::select! {
-            _ = pos_tick.tick() => {
+            _ = phys_tick.tick() => {
                 if bot.state.joined {
-                    let pos = bot.state.pos;
-                    let yaw = bot.state.yaw;
-                    let _ = bot.send_pos_simple(pos, yaw).await;
+                    if let Err(e) = bot.physics_step(DT).await {
+                        info!("physics_step error: {e}");
+                    }
                 }
             }
 
@@ -46,7 +48,8 @@ async fn main() -> anyhow::Result<()> {
 
                     Some(Event::Joined) => {
                         info!("Joined the server!");
-                        bot.send_chat("Hello! I am a headless Luanti bot.").await?;
+                        //bot.send_chat("Hello! I am a headless Luanti bot.").await?;
+                        bot.respawn();
                     }
 
                     Some(Event::Chat { sender, text }) => {
@@ -56,6 +59,10 @@ async fn main() -> anyhow::Result<()> {
 
                     Some(Event::MovePlayer { pos, .. }) => {
                         info!("Server moved us to ({:.1}, {:.1}, {:.1})", pos.x, pos.y, pos.z);
+                    }
+
+                    Some(Event::MovementParams { walk_speed, jump_speed, gravity }) => {
+                        info!("Movement params — walk:{walk_speed:.1} jump:{jump_speed:.1} gravity:{gravity:.1}");
                     }
 
                     Some(Event::Hp { hp }) => {
@@ -102,16 +109,30 @@ async fn handle_chat(bot: &mut Bot, sender: &str, text: &str) -> anyhow::Result<
     }
 
     match text.trim() {
-        "!pos" => {
+        "<> <dwarfthe3> !pos" => {
             let p = bot.state.pos;
             bot.send_chat(format!("({:.1}, {:.1}, {:.1})", p.x, p.y, p.z)).await?;
         }
-        "!hp" => {
+        "<> <dwarfthe3> !respawn" => {
+            bot.respawn().await?;
+        }
+        "<> <dwarfthe3> !hp" => {
             bot.send_chat(format!("HP: {}", bot.state.hp)).await?;
         }
-        "!quit" => {
+        "<> <dwarfthe3> !jump" => {
+            bot.jump();
+        }
+        "<> <dwarfthe3> !forward" => {
+            bot.walk(true, false, false, false);
+            bot.send_chat("Walking forward").await?;
+        }
+        "<dwarfthe3> !stop" => {
+            bot.stop();
+            bot.send_chat("Stopped").await?;
+        }
+        "<dwarfthe3> !quit" => {
             bot.send_chat("Goodbye!").await?;
-            bot.disconnect().await?;
+            bot.disconnect();
         }
         _ => {}
     }

@@ -5,7 +5,7 @@ use tracing::info;
 async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt::init(); // RUST_LOG=info or debug
 
-    let mut bot = Bot::connect(BotConfig::new("84.247.132.141:40001", "dwarfbot", "p")).await?;
+    let mut bot = Bot::connect(BotConfig::new("135.148.164.122:16706", "dwarfbot", "p")).await?;
     info!("Connected and authenticated");
 
     while let Some(event) = bot.next_event().await {
@@ -19,17 +19,17 @@ async fn main() -> anyhow::Result<()> {
                 info!("<{sender}> {text}");
 
                 match text.trim() {
-                    "!pos" => {
+                    "<> <dwarfthe3> !pos" => {
                         let p = bot.state.pos;
                         bot.send_chat(format!("I am at ({:.1}, {:.1}, {:.1})", p.x, p.y, p.z))
                             .await?;
                     }
-                    "!hp" => {
+                    "<> <dwarfthe3> !hp" => {
                         bot.send_chat(format!("HP: {}", bot.state.hp)).await?;
                     }
-                    "!quit" => {
-                        bot.send_chat("Goodbye!").await?;
-                        bot.disconnect().await?;
+                    "<> <dwarfthe3> !quit" => {
+                        //bot.send_chat("Goodbye!").await?;
+                        bot.disconnect();
                         break;
                     }
                     _ => {}
@@ -37,14 +37,14 @@ async fn main() -> anyhow::Result<()> {
             }
 
             Event::MovePlayer { pos, .. } => {
-                info!("Server moved us to ({:.1}, {:.1}, {:.1})", pos.x, pos.y, pos.z);
+                info!("Server moved bot to ({:.1}, {:.1}, {:.1})", pos.x, pos.y, pos.z);
             }
 
             Event::Hp { hp } => {
                 info!("HP updated: {hp}");
-                if hp == 0 {
+                if hp == 0 or hp == 0 < hp {
                     // Auto-respawn on death
-                    // bot.respawn().await?;
+                    bot.respawn().await?;
                 }
             }
 

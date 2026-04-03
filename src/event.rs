@@ -1,4 +1,3 @@
-// Use cgmath types from mt_net to avoid version mismatch
 use mt_net::{Deg, Point3, PlayerListUpdateType};
 use std::collections::HashSet;
 
@@ -20,6 +19,12 @@ pub enum Event {
         players:     HashSet<String>,
     },
     TimeOfDay { time: u16, speed: f32 },
+    /// Server-sent movement parameters (walk speed, jump speed, gravity, etc.)
+    MovementParams {
+        walk_speed:  f32,
+        jump_speed:  f32,
+        gravity:     f32,
+    },
     Kicked(String),
     Disconnected,
 }
