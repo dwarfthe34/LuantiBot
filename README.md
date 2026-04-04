@@ -5,6 +5,8 @@ Third read the Compile section.
 
 ### Compile
 For compiling use **`cargo build`**
+### Running the bot
+For running the bot do **`cargo run -- serverIP:port name password`**
 
 ### License
 This project in under the GNU General Public License v3.0. For more info see LICENSE.
