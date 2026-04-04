@@ -5,7 +5,7 @@ use tracing::info;
 async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt::init();
 
-    let mut bot = Bot::connect(Config::new("84.247.132.141:40001", "dwarfbot", "p")).await?;
+    let mut bot = Bot::connect(Config::new("127.0.0.1:30000", "bot", "password")).await?;
     info!("Connected");
 
     while let Some(event) = bot.next_event().await {

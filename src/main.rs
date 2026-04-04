@@ -15,9 +15,9 @@ async fn main() -> anyhow::Result<()> {
         .init();
 
     let cfg = Config {
-        address:  std::env::args().nth(1).unwrap_or_else(|| "84.247.132.141:40001".into()),
-        username: std::env::args().nth(2).unwrap_or_else(|| "dwarfbot".into()),
-        password: std::env::args().nth(3).unwrap_or_else(|| "p".into()),
+        address:  std::env::args().nth(1).unwrap_or_else(|| "127.0.0.1:30000".into()),
+        username: std::env::args().nth(2).unwrap_or_else(|| "bot".into()),
+        password: std::env::args().nth(3).unwrap_or_else(|| "password".into()),
         lang:     "en".into(),
     };
 
