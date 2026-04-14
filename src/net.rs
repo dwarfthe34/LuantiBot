@@ -63,7 +63,6 @@ async fn recv_loop(
 }
 
 async fn respawn(tx: &CltSender) {
-    // Method 1: InvFields with quit=true (how the real client clicks "Respawn" button)
     let mut fields = std::collections::HashMap::new();
     fields.insert("quit".to_string(), "true".to_string());
     let _ = tx.send(&ToSrvPkt::InvFields {
@@ -71,7 +70,6 @@ async fn respawn(tx: &CltSender) {
         fields,
     }).await.map(|_| ());
 
-    // Method 2: legacy Respawn packet
     let _ = tx.send(&ToSrvPkt::Respawn).await.map(|_| ());
 
     info!("Sent respawn (InvFields + Respawn)");
@@ -168,9 +166,9 @@ async fn handle_pkt(
             let _ = tx.send(&ToSrvPkt::RequestMedia { filenames: vec![] }).await.map(|_| ());
         }
 
-        ToCltPkt::BlockData { pos, .. } => {
-            let _ = tx.send(&ToSrvPkt::GotBlocks { blocks: vec![pos] }).await.map(|_| ());
-            let _ = event_tx.send(Event::BlockData { pos }).await;
+        ToCltPkt::BlockData { pos, param0, .. } => {   // keep param0 (node IDs)
+            tx.send(&ToSrvPkt::GotBlocks { blocks: vec![pos] }).await.ok();
+            event_tx.send(Event::BlockData { pos, param0 }).await.ok();
         }
 
         _ => {}

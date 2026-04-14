@@ -1,35 +1,57 @@
 [workspace]
-members = [".", "libs/mt_ser", "libs/mt_ser/derive", "libs/mt_rudp", "libs/mt_net", "libs/mt_auth"]
+members = [
+    ".",
+    "libs/mt_ser",
+    "libs/mt_ser/derive",
+    "libs/mt_rudp",
+    "libs/mt_net",
+    "libs/mt_auth"
+]
 resolver = "2"
 
 [package]
 name = "luanti_bot"
 version = "0.1.0"
 edition = "2021"
-description = "Headless Luanti (Minetest) bot library in Rust"
+description = "Headless Luanti (Minetest) bot library with Rhai scripting support"
 license = "GPL-3.0"
 
 [lib]
 name = "luanti_bot"
 path = "src/lib.rs"
 
-[toolchain]
-channel = "nightly-2023-05-27-x86_64-unknown-linux-gnu"
+[[bin]]
+name = "luanti_bot"
+path = "src/main.rs"
+
+[[bin]]
+name = "lua_bot"
+path = "src/lua_bot.rs"
 
 [[example]]
 name = "simple_bot"
 path = "examples/simple_bot.rs"
 
 [dependencies]
+# REPLACEMENT: Pure Rust scripting engine (No C deps, Stable Rust)
+mlua = { path = "../mlua", features = ["lua54", "send", "async"] }
+lua-src = "546.0"
+
+# Local Workspace Libraries
 mt_ser  = { path = "libs/mt_ser" }
 mt_rudp = { path = "libs/mt_rudp" }
 mt_net  = { path = "libs/mt_net", features = ["client", "server", "conn"] }
 mt_auth = { path = "libs/mt_auth" }
 
-tokio        = { version = "1", features = ["full"] }
-anyhow       = "1"
-thiserror    = "1"
-tracing      = "0.1"
+# Async Runtime & Utilities
+tokio = { version = "1", features = ["full"] }
+anyhow = "1"
+thiserror = "1"
+futures = "0.3"
+
+# Logging & Tracing
+tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-futures      = "0.3"
+
+# Math & Geometry
 cgmath = "0.18.0"

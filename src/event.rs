@@ -26,7 +26,8 @@ pub enum Event {
     },
     Died,
     BlockData {
-        pos: Point3<i16>,
+        pos:    Point3<i16>,
+        param0: Vec<u16>,   // node IDs, len = 4096
     },
     Kicked(String),
     Disconnected,

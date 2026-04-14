@@ -1,4 +1,3 @@
-/// Configuration for a bot connection.
 #[derive(Debug, Clone)]
 pub struct Config {
     pub address:  String,

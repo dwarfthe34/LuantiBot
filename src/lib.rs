@@ -5,6 +5,7 @@ pub mod event;
 pub mod net;
 pub mod physics;
 pub mod state;
+pub mod lua_api;
 
 pub use bot::Bot;
 pub use config::Config;
@@ -12,3 +13,4 @@ pub use error::BotError;
 pub use event::Event;
 pub use state::BotState;
 pub use physics::Physics;
+pub use lua_api::LuaBotAPI;

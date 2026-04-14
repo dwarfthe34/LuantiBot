@@ -11,7 +11,6 @@ pub struct BotState {
     pub joined:    bool,
     pub respawned: bool,
     pub physics:   Physics,
-    /// Known solid block positions from received BlockData packets
     pub blocks:    HashSet<Point3<i16>>,
 }
 
@@ -29,4 +28,3 @@ impl Default for BotState {
         }
     }
 }
-

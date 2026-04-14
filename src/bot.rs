@@ -28,7 +28,6 @@ impl Bot {
         })
     }
 
-    /// Connect using command-line args or defaults
     pub async fn connect_str() -> Result<Self, BotError> {
         let address = std::env::args().nth(1).unwrap_or_else(|| "127.0.0.1:30000".into());
         let username = std::env::args().nth(2).unwrap_or_else(|| "bot".into());
@@ -65,21 +64,19 @@ impl Bot {
             Event::MovementParams { walk_speed, jump_speed, .. } => {
                 self.state.physics.apply_movement_params(*walk_speed, *jump_speed);
             }
-            Event::BlockData { pos } => {
-                // pos is a MAPBLOCK position — each mapblock covers 16x16x16 nodes.
-                // Convert to node positions so collision works correctly.
+            Event::BlockData { pos, param0 } => {
                 let bx = pos.x as i32 * 16;
                 let by = pos.y as i32 * 16;
                 let bz = pos.z as i32 * 16;
-                for dx in 0..16i32 {
-                    for dy in 0..16i32 {
-                        for dz in 0..16i32 {
-                            let nx = (bx + dx).clamp(i16::MIN as i32, i16::MAX as i32) as i16;
-                            let ny = (by + dy).clamp(i16::MIN as i32, i16::MAX as i32) as i16;
-                            let nz = (bz + dz).clamp(i16::MIN as i32, i16::MAX as i32) as i16;
-                            self.state.blocks.insert(mt_net::Point3::new(nx, ny, nz));
-                        }
-                    }
+                for (i, &id) in param0.iter().enumerate() {
+                    if id == 0 { continue; }   // air
+                    let dx = (i % 16) as i32;
+                    let dy = (i / 16 % 16) as i32;
+                    let dz = (i / 256) as i32;
+                    let nx = (bx + dx).clamp(i16::MIN as i32, i16::MAX as i32) as i16;
+                    let ny = (by + dy).clamp(i16::MIN as i32, i16::MAX as i32) as i16;
+                    let nz = (bz + dz).clamp(i16::MIN as i32, i16::MAX as i32) as i16;
+                    self.state.blocks.insert(Point3::new(nx, ny, nz));
                 }
             }
             _ => {}
@@ -88,7 +85,6 @@ impl Bot {
         Some(event)
     }
 
-    /// Send a position keepalive tick. Call at 20 Hz.
     pub async fn physics_step(&mut self, dt: f32) -> Result<(), BotError> {
         let new_pos = self.state.physics.step(self.state.pos, dt, &self.state.blocks);
         self.state.pos = new_pos;

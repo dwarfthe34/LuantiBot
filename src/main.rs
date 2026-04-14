@@ -71,7 +71,6 @@ async fn main() -> anyhow::Result<()> {
                         info!("HP: {hp}");
                     }
 
-                    // PATCHED: Added BlockData handler
                     Some(Event::BlockData { pos }) => {
                         info!("Received block data at ({}, {}, {})", pos.x, pos.y, pos.z);
                     }
@@ -111,7 +110,6 @@ async fn main() -> anyhow::Result<()> {
 }
 
 async fn handle_chat(bot: &mut Bot, sender: &str, text: &str) -> anyhow::Result<()> {
-    // Ignore our own messages
     if sender == bot.username() {
         return Ok(());
     }
