@@ -116,7 +116,7 @@ impl LuaBotAPI {
                 }
             }
 
-            Event::BlockData { pos } => {
+            Event::BlockData { pos, .. } => {
                 if let Ok(func) = globals.get::<Function>("on_block_data") {
                     let _ = func.call::<()>((pos.x as i32, pos.y as i32, pos.z as i32));
                 }

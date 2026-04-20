@@ -1,6 +1,7 @@
 use mt_net::{CltSender, Deg, Key, PlayerPos, Point3, Rad, SenderExt, ToSrvPkt, Vector3};
 use mt_net::enumset::EnumSet;
 
+//use crate::physics::GRAVITY;
 use crate::{
     config::Config,
     error::BotError,
@@ -61,8 +62,8 @@ impl Bot {
             Event::Hp { hp } => {
                 self.state.hp = *hp;
             }
-            Event::MovementParams { walk_speed, jump_speed, .. } => {
-                self.state.physics.apply_movement_params(*walk_speed, *jump_speed);
+            Event::MovementParams { walk_speed, jump_speed, gravity } => {
+                self.state.physics.apply_movement_params(*walk_speed, *jump_speed, *gravity);
             }
             Event::BlockData { pos, param0 } => {
                 let bx = pos.x as i32 * 16;

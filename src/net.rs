@@ -85,7 +85,7 @@ async fn handle_pkt(
 
     match pkt {
         ToCltPkt::AcceptAuth { .. } => {
-            info!("Auth accepted — sending CltReady");
+            info!("Auth accepted sending CltReady");
             if let Err(e) = tx
                 .send(&ToSrvPkt::CltReady {
                     major:    5,
@@ -132,7 +132,7 @@ async fn handle_pkt(
         ToCltPkt::ShowFormspec { formname, .. } => {
             info!("ShowFormspec: {formname:?}");
             if formname == "__builtin:death" {
-                info!("Death formspec — respawning");
+                info!("Death formspec: respawning");
                 respawn(tx).await;
                 let _ = event_tx.send(Event::Died).await;
             }
@@ -166,9 +166,9 @@ async fn handle_pkt(
             let _ = tx.send(&ToSrvPkt::RequestMedia { filenames: vec![] }).await.map(|_| ());
         }
 
-        ToCltPkt::BlockData { pos, param0, .. } => {   // keep param0 (node IDs)
+        ToCltPkt::BlockData { pos, block, .. } => {
             tx.send(&ToSrvPkt::GotBlocks { blocks: vec![pos] }).await.ok();
-            event_tx.send(Event::BlockData { pos, param0 }).await.ok();
+            event_tx.send(Event::BlockData { pos, param0: block }).await.ok();
         }
 
         _ => {}

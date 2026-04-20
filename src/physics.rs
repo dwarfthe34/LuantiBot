@@ -12,6 +12,7 @@ pub struct Physics {
     pub wish_dir: Vector3<f32>,
     pub walk_speed: f32,
     pub jump_speed: f32,
+    pub gravity: f32,
 }
 
 impl Default for Physics {
@@ -23,6 +24,7 @@ impl Default for Physics {
             wish_dir: Vector3::new(0.0, 0.0, 0.0),
             walk_speed: 4.0 * BS,
             jump_speed: 6.5 * BS,
+            gravity:    GRAVITY,
         }
     }
 }
@@ -48,7 +50,7 @@ impl Physics {
         }
         self.want_jump = false;
 
-        self.vel.y -= GRAVITY * dt;
+        self.vel.y -= self.gravity * dt;
 
         let terminal = -180.0 * BS;
         if self.vel.y < terminal {
@@ -125,7 +127,6 @@ impl Physics {
     pub fn apply_movement_params(&mut self, walk_speed: f32, jump_speed: f32, gravity: f32) {
         self.walk_speed = walk_speed * BS;
         self.jump_speed = jump_speed * BS;
-        gravity    = gravity    * BS;
-        gravity = self.gravity = gravity * BS;
+        self.gravity    = gravity * BS;
     }
 }
